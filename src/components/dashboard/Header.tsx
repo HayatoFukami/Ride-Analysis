@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { StravaLogo, LogoutIcon, UserIcon, SpinnerIcon } from "../ui/Icons";
+import { MaterialIcon } from "../ui/Icon";
 
 export interface Athlete {
   id: string;
@@ -17,20 +17,48 @@ interface HeaderProps {
 
 export function Header({ athlete, isLoading = false }: HeaderProps) {
   const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  const closeMenu = () => setMenuOpen(false);
+
+  // Close the menu on Escape or when clicking/tabbing outside.
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        closeMenu();
+        triggerRef.current?.focus();
+      }
+    }
+    function onPointerDown(e: PointerEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        closeMenu();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [menuOpen]);
 
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
       setLogoutError(null);
+      closeMenu();
       const res = await fetch("/api/auth/logout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
 
       if (res.ok || res.status === 401 || res.status === 404) {
-        // Successful logout or session already gone
+        // Successful logout or session already gone.
         router.push("/login");
         router.refresh();
       } else {
@@ -38,12 +66,12 @@ export function Header({ athlete, isLoading = false }: HeaderProps) {
         setIsLoggingOut(false);
       }
     } catch {
-      // Fallback redirect even on network drop
+      // Fallback redirect even on network drop.
       router.push("/login");
     }
   };
 
-  const fullName = athlete?.displayName || "Athlete";
+  const fullName = athlete?.displayName || "アカウント";
   const avatarUrl = athlete?.profile;
   const isDefaultAvatar =
     !avatarUrl ||
@@ -51,93 +79,94 @@ export function Header({ athlete, isLoading = false }: HeaderProps) {
     avatarUrl.includes("avatar/athlete/medium.png");
 
   return (
-    <header className="sticky top-0 z-30 w-full border-b border-slate-200/80 bg-white/80 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+    <header className="m3-app-bar">
+      <div className="m3-container flex h-14 items-center justify-between">
         {/* Brand */}
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FC5200] text-white shadow-sm shadow-[#FC5200]/30 transition-transform hover:scale-105">
-            <StravaLogo className="h-6 w-6" />
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-container text-on-primary-container">
+            <MaterialIcon name="monitoring" size={20} aria-hidden />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-base font-bold tracking-tight text-slate-900 sm:text-lg">
-                Strava Dashboard
-              </span>
-              <span className="hidden rounded-full bg-orange-50 px-2 py-0.5 text-xs font-semibold text-[#FC5200] ring-1 ring-inset ring-[#FC5200]/20 sm:inline-block">
-                MVP
-              </span>
-            </div>
-            <p className="hidden text-xs text-slate-500 sm:block">
-              パーソナル統計・機材別分析
-            </p>
-          </div>
+          <span className="text-base font-semibold tracking-tight text-on-surface">
+            Ride Analysis
+          </span>
         </div>
 
-        {/* Right Section: Athlete & Logout */}
-        <div className="flex items-center gap-3 sm:gap-4">
-          {isLoading ? (
-            <div className="flex items-center gap-3 animate-pulse">
-              <div className="h-9 w-9 rounded-full bg-slate-200" />
-              <div className="hidden flex-col gap-1 sm:flex">
-                <div className="h-4 w-24 rounded bg-slate-200" />
-                <div className="h-3 w-16 rounded bg-slate-200" />
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                {avatarUrl && !isDefaultAvatar ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={avatarUrl}
-                    alt={fullName}
-                    className="h-9 w-9 rounded-full border border-slate-200 object-cover shadow-sm ring-2 ring-white"
-                  />
-                ) : (
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600 ring-2 ring-white">
-                    <UserIcon className="h-5 w-5" />
-                  </div>
-                )}
-                <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500" />
-              </div>
-
-              <div className="hidden text-left sm:block">
-                <p className="text-sm font-semibold leading-tight text-slate-800">
-                  {fullName}
-                </p>
-                <p className="text-[11px] text-slate-500 leading-tight">
-                  Strava接続中
-                </p>
-              </div>
-            </div>
-          )}
-
-          <div className="h-5 w-px bg-slate-200" />
-
-          {/* Logout Button */}
+        {/* Account disclosure */}
+        <div ref={menuRef} className="relative">
           <button
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            className="group inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-rose-600 hover:border-rose-200 focus:outline-none focus:ring-2 focus:ring-[#FC5200]/20 disabled:cursor-not-allowed disabled:opacity-50"
-            title="ログアウト"
+            ref={triggerRef}
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-haspopup="true"
+            aria-expanded={menuOpen}
+            aria-controls="account-popup"
+            aria-label="アカウントメニュー"
+            className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition-colors hover:bg-surface-container-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
           >
-            {isLoggingOut ? (
-              <>
-                <SpinnerIcon className="h-3.5 w-3.5 text-slate-500" />
-                <span className="hidden sm:inline">ログアウト中...</span>
-              </>
+            {isLoading ? (
+              <span className="m3-skeleton h-8 w-8 rounded-full" aria-hidden />
+            ) : avatarUrl && !isDefaultAvatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={avatarUrl}
+                alt=""
+                className="h-8 w-8 rounded-full border border-outline-variant object-cover"
+              />
             ) : (
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary-container text-on-secondary-container">
+                <MaterialIcon name="person" size={20} aria-hidden />
+              </span>
+            )}
+            {!isLoading && (
               <>
-                <LogoutIcon className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
-                <span>ログアウト</span>
+                <span className="hidden max-w-[10rem] truncate text-sm font-medium text-on-surface sm:inline">
+                  {fullName}
+                </span>
+                <MaterialIcon
+                  name="expand_more"
+                  size={18}
+                  className="text-on-surface-variant"
+                  aria-hidden
+                />
               </>
             )}
           </button>
+
+          {menuOpen && (
+            <div
+              id="account-popup"
+              aria-label="アカウントメニュー"
+              className="m3-menu absolute right-0 top-full z-40 mt-2"
+            >
+              <a
+                href="/api/auth/strava/login"
+                className="m3-menu-item"
+                onClick={closeMenu}
+              >
+                <MaterialIcon name="link" size={18} aria-hidden />
+                <span>Stravaに再接続</span>
+              </a>
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="m3-menu-item"
+              >
+                <MaterialIcon name="logout" size={18} aria-hidden />
+                <span>{isLoggingOut ? "ログアウト中..." : "ログアウト"}</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
       {logoutError && (
-        <div className="bg-rose-50 px-4 py-1.5 text-center text-xs font-medium text-rose-700">
-          {logoutError}
+        <div
+          role="alert"
+          className="m3-alert m3-alert--error rounded-none border-t text-sm"
+        >
+          <MaterialIcon name="error" size={18} aria-hidden />
+          <p>{logoutError}</p>
         </div>
       )}
     </header>
