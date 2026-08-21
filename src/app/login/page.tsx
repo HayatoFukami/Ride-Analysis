@@ -1,15 +1,80 @@
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/auth/session";
-import {
-  StravaLogo,
-  BikeIcon,
-  ActivityIcon,
-  CheckCircleIcon,
-  AlertCircleIcon,
-} from "@/components/ui/Icons";
+import { MaterialIcon, StravaLogo, type IconName } from "@/components/ui/Icon";
 
 interface LoginPageProps {
-  searchParams?: Promise<{ reason?: string }>;
+  searchParams?: Promise<{ error?: string; reason?: string }>;
+}
+
+type NoticeKind = "reconnect" | "error" | "status";
+
+interface Notice {
+  kind: NoticeKind;
+  icon: IconName;
+  title: string;
+  body: string;
+}
+
+/**
+ * Map OAuth callback error codes (see /api/auth/strava/callback) to friendly,
+ * accurate inline notices. This only affects presentation; the callback/server
+ * logic is untouched.
+ */
+const OAUTH_ERROR_NOTICES: Record<string, Notice> = {
+  state: {
+    kind: "error",
+    icon: "error",
+    title: "認証を完了できませんでした",
+    body: "セッションの整合性を確認できませんでした。もう一度お試しください。",
+  },
+  denied: {
+    kind: "status",
+    icon: "info",
+    title: "Stravaの連携が許可されませんでした",
+    body: "アクセスを許可すると、統計データを読み取れるようになります。",
+  },
+  missing_code: {
+    kind: "error",
+    icon: "error",
+    title: "認証コードを受け取れませんでした",
+    body: "Stravaからの応答に問題がありました。もう一度お試しください。",
+  },
+  token: {
+    kind: "error",
+    icon: "error",
+    title: "Stravaとの接続に失敗しました",
+    body: "トークンの取得に失敗しました。時間を置いてもう一度お試しください。",
+  },
+  no_athlete: {
+    kind: "error",
+    icon: "error",
+    title: "アスリート情報を取得できませんでした",
+    body: "Stravaアカウントの情報を読み取れませんでした。もう一度お試しください。",
+  },
+  scope: {
+    kind: "error",
+    icon: "info",
+    title: "必要なアクセス権限が許可されませんでした",
+    body: "分析に必要な読み取り権限（read / activity:read_all）を許可してください。",
+  },
+};
+
+function resolveNotice(
+  error: string | undefined,
+  reason: string | undefined
+): Notice | null {
+  if (reason === "reconnect") {
+    return {
+      kind: "reconnect",
+      icon: "refresh",
+      title: "Stravaとの再接続が必要です",
+      body: "接続の有効期限が切れているか、認証情報が更新されました。下のボタンから再度Stravaに接続してください。",
+    };
+  }
+  if (error) {
+    return OAUTH_ERROR_NOTICES[error] ?? null;
+  }
+  return null;
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
@@ -20,89 +85,87 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   }
 
   const resolvedParams = searchParams ? await searchParams : undefined;
-  const isReconnect = resolvedParams?.reason === "reconnect";
+  const notice = resolveNotice(resolvedParams?.error, resolvedParams?.reason);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#F7F7F8] px-4 py-12 sm:px-6 lg:px-8 selection:bg-[#FC5200]/20 selection:text-[#FC5200]">
-      {/* Login Card */}
-      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-8 shadow-xl shadow-slate-200/50 sm:p-10">
-        {/* Brand Icon & Heading */}
+    <main className="m3-container flex flex-1 items-center justify-center py-12 sm:py-16">
+      <section
+        className="m3-card w-full max-w-md p-6 sm:p-8"
+        aria-labelledby="login-heading"
+      >
+        {/* Brand */}
         <div className="flex flex-col items-center text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FC5200] text-white shadow-lg shadow-[#FC5200]/30 transition-transform hover:scale-105">
-            <StravaLogo className="h-8 w-8" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-container text-on-primary-container">
+            <MaterialIcon name="monitoring" size={26} aria-hidden />
           </div>
 
-          <h1 className="mt-6 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
-            Strava Personal Dashboard
+          <h1
+            id="login-heading"
+            className="mt-5 text-2xl font-semibold tracking-tight text-on-surface"
+          >
+            Ride Analysis
           </h1>
 
-          <p className="mt-3 text-sm font-medium leading-relaxed text-slate-600">
+          <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
             自分のStravaデータをもっと自由に分析する。
           </p>
         </div>
 
-        {/* Reconnect notice if redirected from session expiration */}
-        {isReconnect && (
-          <div className="mt-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs font-medium text-amber-900">
-            <AlertCircleIcon className="h-5 w-5 shrink-0 text-amber-600 mt-0.5" />
+        {/* Reconnect / OAuth error notice */}
+        {notice && (
+          <div
+            role={notice.kind === "error" ? "alert" : "status"}
+            className={`mt-6 flex items-start gap-3 rounded-medium border p-4 ${
+              notice.kind === "error"
+                ? "border-error/30 bg-error-container text-on-error-container"
+                : "border-outline-variant bg-secondary-container text-on-secondary-container"
+            }`}
+          >
+            <MaterialIcon
+              name={notice.icon}
+              size={20}
+              className="mt-0.5 shrink-0"
+              aria-hidden
+            />
             <div>
-              <p className="font-bold">Stravaとの再接続が必要です</p>
-              <p className="mt-0.5 text-amber-800 leading-relaxed">
-                接続有効期限が切れたか、認証が更新されました。下のボタンから再度Stravaにログインしてください。
+              <p className="text-sm font-semibold">{notice.title}</p>
+              <p className="mt-1 text-sm leading-relaxed opacity-90">
+                {notice.body}
               </p>
             </div>
           </div>
         )}
 
-        {/* Feature Highlights */}
-        <div className="mt-6 space-y-3 rounded-2xl bg-slate-50 p-4 text-xs font-medium text-slate-700 border border-slate-100">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[#FC5200]">
-              <BikeIcon className="h-3.5 w-3.5" />
-            </div>
-            <span>機材（バイク・シューズ）ごとの正確な期間別走行距離</span>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-              <ActivityIcon className="h-3.5 w-3.5" />
-            </div>
-            <span>月間・年間のアクティビティ推移と統計サマリー</span>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-              <CheckCircleIcon className="h-3.5 w-3.5" />
-            </div>
-            <span>非公開（Only You）アクティビティも含めた集計</span>
-          </div>
-        </div>
-
-        {/* Connect Action Button */}
+        {/* OAuth action — Strava orange is reserved for this context. */}
         <div className="mt-8">
           <a
             href="/api/auth/strava/login"
-            className="group flex w-full items-center justify-center gap-3 rounded-2xl bg-[#FC5200] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#FC5200]/30 transition-all hover:bg-[#E04800] hover:shadow-xl hover:shadow-[#FC5200]/40 focus:outline-none focus:ring-4 focus:ring-[#FC5200]/20 active:scale-[0.98]"
+            className="m3-button m3-button--md m3-button--strava w-full"
           >
-            <StravaLogo className="h-5 w-5 fill-current" />
-            <span>{isReconnect ? "Stravaと再接続する" : "Connect with Strava"}</span>
+            <StravaLogo size={20} aria-hidden />
+            <span>
+              {notice?.kind === "reconnect"
+                ? "Stravaと再接続する"
+                : "Connect with Strava"}
+            </span>
           </a>
         </div>
 
-        {/* Security & Privacy Reassurance */}
-        <div className="mt-6 text-center">
-          <p className="text-[11px] leading-relaxed text-slate-400">
+        {/* Privacy note — accurate: the Strava password is never stored. */}
+        <div className="mt-6 flex items-start justify-center gap-2 text-center">
+          <MaterialIcon
+            name="lock"
+            size={15}
+            className="mt-0.5 shrink-0 text-on-surface-variant"
+            aria-hidden
+          />
+          <p className="text-xs leading-relaxed text-on-surface-variant">
             Stravaのパスワードは保存されません。
             <br />
-            公式OAuth連携により安全に統計データへアクセスします。
+            公式OAuth連携により、認証情報は安全に管理されます。
           </p>
         </div>
-      </div>
-
-      {/* Footer */}
-      <footer className="mt-8 text-center text-xs text-slate-400">
-        <p>Strava Personal Dashboard · Local MVP</p>
-      </footer>
-    </div>
+      </section>
+    </main>
   );
 }

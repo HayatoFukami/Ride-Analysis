@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Strava Personal Dashboard",
-  description: "自分のStravaアクティビティをもっと自由に、スマートに分析するパーソナルダッシュボード",
+  title: "Ride Analysis",
+  description:
+    "自分のStravaアクティビティをもっと自由に、スマートに分析するパーソナルダッシュボード",
 };
 
 export default function RootLayout({
@@ -13,7 +14,22 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja" className="h-full">
-      <body className="h-full bg-[#F7F7F8] text-slate-900 antialiased selection:bg-[#FC5200]/20 selection:text-[#FC5200]">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        {/* Roboto via Google Fonts stylesheet — no package dependency, with
+            local/system fallbacks (incl. Japanese) in the --font-sans stack. */}
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="flex min-h-full flex-col antialiased">
         {children}
       </body>
     </html>

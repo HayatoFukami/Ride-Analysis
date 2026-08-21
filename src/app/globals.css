@@ -1,38 +1,207 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-:root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --strava-orange: #fc5200;
-  --strava-orange-hover: #e04800;
+/* ============================================================================
+   Ride Analysis — Material Design 3 token system
+   ----------------------------------------------------------------------------
+   A single source of truth for color roles, typography, shape, elevation,
+   state layers, focus, motion and responsive sizing. New UI (including future
+   Analytics tiles) should be built from these tokens so the whole app stays
+   visually consistent.
+
+   Palette intent:
+   - A restrained blue is the primary brand color.
+   - Strava orange is reserved for the OAuth / Strava-connection context only.
+   ========================================================================== */
+
+@theme {
+  /* ---- Typography ------------------------------------------------------- */
+  --font-sans: "Roboto", system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", "Helvetica Neue", "Noto Sans JP", "Hiragino Sans",
+    "Yu Gothic UI", Meiryo, sans-serif;
+
+  /* ---- M3 color roles (light) ------------------------------------------- */
+  --color-primary: #0b57d0;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #d3e3fd;
+  --color-on-primary-container: #041e49;
+
+  --color-secondary: #566f9b;
+  --color-secondary-container: #dae2f9;
+  --color-on-secondary-container: #101c2b;
+
+  --color-surface: #f8fafd;
+  --color-surface-container-low: #f2f6fb;
+  --color-surface-container: #ecf2f9;
+  --color-surface-container-high: #e6edf6;
+  --color-on-surface: #101418;
+  --color-on-surface-variant: #44474e;
+
+  --color-outline: #73777f;
+  --color-outline-variant: #c4c7cf;
+
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #410002;
+
+  /* Strava orange — OAuth / connection context only. */
+  --color-strava: #fc5200;
+  --color-on-strava: #2a1300;
+  /* Hover/active are lighter than the base so the dark foreground keeps
+     meeting the WCAG AA contrast target (4.5:1) in every state. */
+  --color-strava-hover: #e85a1a;
+  --color-strava-active: #f0702e;
+
+  /* ---- Shape (M3 corners) ----------------------------------------------- */
+  --radius-extra-small: 4px;
+  --radius-small: 8px;
+  --radius-medium: 12px;
+  --radius-large: 16px;
+  --radius-extra-large: 28px;
+  --radius-full: 9999px;
+
+  /* ---- Elevation (restrained, tonal) ------------------------------------ */
+  --shadow-elevation-1: 0 1px 2px 0 rgb(16 20 24 / 0.08),
+    0 1px 3px 0 rgb(16 20 24 / 0.06);
+  --shadow-elevation-2: 0 1px 2px 0 rgb(16 20 24 / 0.08),
+    0 2px 6px 1px rgb(16 20 24 / 0.08);
+  --shadow-elevation-3: 0 2px 4px 0 rgb(16 20 24 / 0.1),
+    0 4px 12px 2px rgb(16 20 24 / 0.1);
+
+  /* ---- Motion (durations / easing) -------------------------------------- */
+  --ease-m3: cubic-bezier(0.2, 0, 0, 1);
+  --duration-1: 150ms;
+  --duration-2: 200ms;
+  --duration-3: 280ms;
 }
 
-body {
-  color: var(--foreground);
-  background-color: var(--background);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* ============================================================================
+   Base
+   ========================================================================== */
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-on-surface);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Keyboard-visible focus — semantic, high-contrast, works everywhere. */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  /* Respect users who prefer reduced motion. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  ::selection {
+    background-color: var(--color-primary-container);
+    color: var(--color-on-primary-container);
+  }
 }
 
-/* Custom scrollbar styling */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+/* ============================================================================
+   Reusable M3 building blocks (components layer)
+   ========================================================================== */
 
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
+@layer components {
+  /* Responsive app container — compact gutters that widen with the viewport. */
+  .m3-container {
+    width: 100%;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+  @media (min-width: 40rem) {
+    /* 640px */
+    .m3-container {
+      padding-inline: 1.5rem;
+    }
+  }
+  @media (min-width: 64rem) {
+    /* 1024px */
+    .m3-container {
+      max-width: 80rem; /* 1280px */
+    }
+  }
 
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
+  /* Filled button — default state. */
+  .m3-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    user-select: none;
+    text-decoration: none;
+    transition: background-color var(--duration-2) var(--ease-m3),
+      box-shadow var(--duration-2) var(--ease-m3);
+  }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  /* Compact control height (M3 "medium" 40px, tightened for a calm shell). */
+  .m3-button--md {
+    min-height: 2.5rem; /* 40px */
+    padding-inline: 1.5rem;
+    font-size: 0.875rem;
+  }
+
+  /* Primary filled button. */
+  .m3-button--primary {
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+  .m3-button--primary:hover {
+    box-shadow: var(--shadow-elevation-2);
+    background-color: color-mix(in srgb, var(--color-primary) 90%, black);
+  }
+  .m3-button--primary:active {
+    background-color: color-mix(in srgb, var(--color-primary) 82%, black);
+  }
+  .m3-button--primary:disabled {
+    background-color: var(--color-surface-container-high);
+    color: var(--color-on-surface-variant);
+    box-shadow: none;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  /* Strava filled button — orange reserved for OAuth only. */
+  .m3-button--strava {
+    background-color: var(--color-strava);
+    color: var(--color-on-strava);
+  }
+  .m3-button--strava:hover {
+    background-color: var(--color-strava-hover);
+    box-shadow: var(--shadow-elevation-2);
+  }
+  .m3-button--strava:active {
+    background-color: var(--color-strava-active);
+  }
+
+  /* Card surface. */
+  .m3-card {
+    background-color: var(--color-surface-container-low);
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--radius-large);
+    box-shadow: var(--shadow-elevation-1);
+  }
 }
