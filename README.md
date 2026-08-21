@@ -92,9 +92,12 @@ pnpm install
 
 ```bash
 pnpm prisma migrate dev
+pnpm prisma generate
 ```
 
-ローカルのSQLiteデータベース（`prisma/dev.db`）が作成され、テーブルが構築されます。
+ローカルのSQLiteデータベース（プロジェクトルート直下の `dev.db`）が作成され、テーブルが構築されます。`DATABASE_URL` を `.env.local` に設定していない場合は `file:./dev.db`（ルート直下）が使用されます。
+
+`pnpm install` 時にもPrisma Clientは自動生成されます。スキーマを変更した場合は、マイグレーション後に `pnpm prisma generate` を実行してください。
 
 ### 5. 開発サーバーの起動
 
@@ -121,7 +124,7 @@ pnpm dev
 | OAuthエラー `redirect_uri mismatch` | Strava Developersの「Authorization Callback Domain」が `localhost` になっているか確認してください。 |
 | ログイン後に `http://localhost:3000/api/auth/strava/callback` へ遷移しない | `STRAVA_REDIRECT_URI` が上記の値と一致しているか確認してください。 |
 | ポート3000が使用中 | 他のプロセスを停止するか、`PORT` 環境変数で別ポートを指定してください。 |
-| マイグレーションに失敗する | `prisma/dev.db` を削除して `pnpm prisma migrate dev` を再実行してください。 |
+| マイグレーションに失敗する | ルート直下の `dev.db` を削除して `pnpm prisma migrate dev` を再実行してください。 |
 | 「Stravaとの接続が切れています」と表示される | Access Tokenの自動更新に失敗しています。「Reconnect Strava」から再接続してください。 |
 | 「Strava APIの利用制限に達しました」と表示される | Strava APIのRate Limitに達しています。時間を空けて再度試してください。 |
 | Node.jsのバージョンエラー | `nvm use` で `.nvmrc` のバージョン（`24.19.0`）に切り替えてください。 |
