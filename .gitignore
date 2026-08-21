@@ -89,6 +89,9 @@ src/generated/prisma/
 .next
 out
 
+# Local deepwork progress state
+.slim/deepwork/
+
 # Nuxt.js build / generate output
 .nuxt
 dist
