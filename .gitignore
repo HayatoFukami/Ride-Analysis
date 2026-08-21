@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js
+.next/
+out/
+
+# Build output
+dist/
+build/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Prisma and SQLite local databases
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# TypeScript and generated files
+*.tsbuildinfo
+next-env.d.ts
+
+# Local tooling and operating system files
+.idea/
+.DS_Store
