@@ -1,4 +1,4 @@
-# Strava Analysis
+# Ride Analysis
 
 ## 1. プロジェクト概要
 
@@ -30,9 +30,10 @@ MVPでは以下を実現する。
 
 * React
 * Tailwind CSS
-* 必要に応じて shadcn/ui
 
 UIライブラリは必須ではない。
+
+スタイリングはTailwind CSSとCSSで実装する。大規模なUIフレームワーク（Material Design 3のフルコンポーネントライブラリ等）は導入しない。
 
 過度な独自コンポーネントを作るより、保守しやすく単純な構造を優先する。
 
@@ -324,7 +325,7 @@ OAuth callback:
 内容:
 
 ```text
-Strava Personal Dashboard
+Ride Analysis
 
 自分のStravaデータを
 もっと自由に分析する。
@@ -380,7 +381,7 @@ Analytics
 左:
 
 ```text
-Strava Dashboard
+Ride Analysis
 ```
 
 右:
@@ -978,39 +979,50 @@ MVPでは個人ローカル用途であるため、過剰なEnterprise向けセ�
 
 # 32. UIデザイン
 
+UIはGoogleのMaterial Design 3（M3）に沿った、控えめでクリーンなビジュアル言語を採用する。
+
 方向性:
 
 ```text
-Modern
+Material Design 3
+Google-like
+Restrained
 Minimal
-Dashboard
-Strava-inspired
 ```
 
 ただしStrava本体のコピーUIにはしない。
 
-背景:
+## カラー
+
+M3のセマンティックカラーロール／トークンに従う。
 
 ```text
-#F7F7F8
+Primary
+On-primary
+Primary-container
+On-primary-container
+Secondary
+Secondary-container
+On-secondary-container
+Surface
+Surface-container-low
+Surface-container
+Surface-container-high
+On-surface
+On-surface-variant
+Outline
+Outline-variant
+Error
+On-error
 ```
 
-カード:
+Strava OrangeはOAuthログインやStrava連携の文脈でのみ使用する。ダッシュボード全体のアクセントカラーには使用しない。
 
-```text
-white
-border
-subtle shadow
-12〜16px radius
-```
+## タイポグラフィ
 
-アクセント:
+Robotoを基本とし、利用できない場合はシステムフォントへフォールバックする。
 
-```text
-Strava Orange系
-```
-
-数値を大きく見せる。
+数値は大きく見せる。
 
 例:
 
@@ -1019,7 +1031,49 @@ Strava Orange系
 km
 ```
 
-Analytics Tileは将来増えても統一感が出るカードデザインにする。
+見出し・本文・ラベルで明確な階層を保つ。
+
+## シェイプ・エレベーション・状態レイヤー
+
+M3のトークンに従う。
+
+* シェイプ: カードやボタンに適切な角丸（例: 12〜16px）
+* エレベーション: 控えめなシャドウ
+* 状態レイヤー: Hover / Active / Pressed / Disabled などの状態を明示する
+
+## レスポンシブ／アダプティブ
+
+Desktopを主用途とするがResponsive対応する。
+
+```text
+Desktop: Overview 4 columns / Analytics 2〜3 columns
+Tablet:  Overview 2 columns
+Mobile:  1 column
+```
+
+Gear DistanceフォームもMobileでは縦並びにする。
+
+## アクセシビリティ
+
+* 十分なコントラストを確保する
+* キーボード操作とフォーカス表示を保証する
+* 状態を色だけでなくテキストやアイコンでも伝える
+
+## Loading / Empty / Error 状態
+
+各状態を明示的にデザインする。
+
+* Loading: SkeletonまたはSpinner
+* Empty: 該当データがない場合の表示
+* Error: エラー種別に応じた表示
+
+## フェイク分析カードを作らない
+
+実データを表示しない装飾的なAnalyticsカードは作らない。
+
+## デザインシステムの整理
+
+色・タイポグラフィ・シェイプ・エレベーションなどのトークンを一箇所に集約し、将来Analytics Tileが増えても統一感が出る構造にする。
 
 ---
 
