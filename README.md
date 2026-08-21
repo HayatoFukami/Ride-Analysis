@@ -1,4 +1,4 @@
-# Strava Analysis
+# Ride Analysis
 
 Strava APIから自分のアクティビティ情報を取得し、Strava標準画面では確認しにくい独自の統計・分析を行う**個人用Webアプリケーション**です。
 
